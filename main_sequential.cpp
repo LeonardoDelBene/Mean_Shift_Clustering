@@ -91,7 +91,10 @@ void mean_shift_image_segmentation(unsigned char* image, int width, int height, 
     }
 
     // Apply Mean-Shift Clustering
+    auto start_total = std::chrono::high_resolution_clock::now();
     std::vector<Point> shifted_points = mean_shift_clustering(points, bandwidth);
+    auto end_total = std::chrono::high_resolution_clock::now();
+    std::cout << "Execution time: " << std::chrono::duration_cast<std::chrono::seconds>(end_total - start_total).count() << " seconds" << std::endl;
 
     // Map to store clusters with their centroid (x, y, r, g, b) and population count
     std::map<std::tuple<int, int, int, int, int>, int> cluster_map;
@@ -137,10 +140,7 @@ int main() {
     double bandwidth = 20.0;
 
     // Perform the image segmentation with Mean-Shift
-    auto start_total = std::chrono::high_resolution_clock::now();
     mean_shift_image_segmentation(image, width, height, channels, bandwidth);
-    auto end_total = std::chrono::high_resolution_clock::now();
-    std::cout << "Execution time: " << std::chrono::duration_cast<std::chrono::seconds>(end_total - start_total).count() << " seconds" << std::endl;
 
     // Save the segmented image using stb_image_write
     stbi_write_png("img/output.png", width, height, channels, image, width * channels);

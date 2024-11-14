@@ -23,7 +23,8 @@ else()
 endif()
 
 # Add the executable target
-add_executable(Mean_Shift_Clustering main.cpp)
+add_executable(Mean_Shift_Clustering_sequential main_sequential.cpp)
+add_executable(Mean_Shift_Clustering_parallel main_parallel.cpp)
 
 
 
