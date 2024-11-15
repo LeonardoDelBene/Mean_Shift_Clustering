@@ -1,3 +1,4 @@
-/Users/leonardodelbene/CLionProjects/Mean_Shift_Clustering/cmake-build-debug/CMakeFiles/Mean_Shift_Clustering.dir
+/Users/leonardodelbene/CLionProjects/Mean_Shift_Clustering/cmake-build-debug/CMakeFiles/Mean_Shift_Clustering_sequential.dir
+/Users/leonardodelbene/CLionProjects/Mean_Shift_Clustering/cmake-build-debug/CMakeFiles/Mean_Shift_Clustering_parallel.dir
 /Users/leonardodelbene/CLionProjects/Mean_Shift_Clustering/cmake-build-debug/CMakeFiles/edit_cache.dir
 /Users/leonardodelbene/CLionProjects/Mean_Shift_Clustering/cmake-build-debug/CMakeFiles/rebuild_cache.dir
