@@ -1,0 +1,69 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.10"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "Mean_Shift_Clustering",
+					"targetIndexes" : 
+					[
+						0,
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "Mean_Shift_Clustering_parallel::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Mean_Shift_Clustering_parallel-Debug-e5af5d1c5ce4ce61e5a8.json",
+					"name" : "Mean_Shift_Clustering_parallel",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "Mean_Shift_Clustering_sequential::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-Mean_Shift_Clustering_sequential-Debug-0e0a0f860719605057c7.json",
+					"name" : "Mean_Shift_Clustering_sequential",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/Users/leonardodelbene/CLionProjects/Mean_Shift_Clustering/cmake-build-debug",
+		"source" : "/Users/leonardodelbene/CLionProjects/Mean_Shift_Clustering"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}
