@@ -8,7 +8,7 @@
 #include <chrono>
 #include <cmath>
 #include <omp.h>
-#include <unordered_map>
+
 
 struct Point {
     double x, y, r, g, b;
@@ -40,7 +40,7 @@ double gaussian_kernel(double distance, double bandwidth) {
 
 void mean_shift_clustering(Point* points, Point* shifted_points, int num_points, double bandwidth, int max_iter = 300, double tol = 1e-3) {
 
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < num_points; ++i) {
         Point current_point = points[i];
 
@@ -56,7 +56,7 @@ void mean_shift_clustering(Point* points, Point* shifted_points, int num_points,
             double numerator_g = 0.0;
             double numerator_b = 0.0;
 
-#pragma omp parallel for reduction(+:numerator_x, numerator_y, numerator_r, numerator_g, numerator_b, denominator)
+            #pragma omp parallel for reduction(+:numerator_x, numerator_y, numerator_r, numerator_g, numerator_b, denominator)
             for (int j = 0; j < num_points; ++j) {
                 double dist = current_point.distance(points[j]);
                 double weight = gaussian_kernel(dist, bandwidth);
@@ -101,7 +101,7 @@ void mean_shift_image_segmentation(unsigned char* image, int width, int height, 
     std::cout << "Number of points: " << num_points << std::endl;
 
     // Carica i pixel dell'immagine come punti con posizione spaziale e colore
-#pragma omp parallel for
+#pragma omp parallel for schedule(static)
     for (int y = 0; y < height; ++y) {
         int y_offset = y * width;
         for (int x = 0; x < width; ++x) {
@@ -120,6 +120,8 @@ void mean_shift_image_segmentation(unsigned char* image, int width, int height, 
     std::map<std::tuple<int, int, int, int, int>, int> cluster_map;
 
     // Parallelize the counting of clusters
+    omp_lock_t lck;
+    omp_init_lock(&lck);
 #pragma omp parallel
     {
         // Crea una mappa locale per ciascun thread
@@ -133,13 +135,15 @@ void mean_shift_image_segmentation(unsigned char* image, int width, int height, 
         }
 
         // Combinare le mappe locali nel cluster_map globale
-#pragma omp critical
         {
+            omp_set_lock(&lck);
             for (const auto& local_cluster : local_cluster_map) {
                 cluster_map[local_cluster.first] += local_cluster.second;
             }
+            omp_unset_lock(&lck);
         }
     }
+    omp_destroy_lock(&lck);
 
 
     std::cout << "Total clusters: " << cluster_map.size() << std::endl;
@@ -169,31 +173,36 @@ void mean_shift_image_segmentation(unsigned char* image, int width, int height, 
 }
 
 int main() {
-    int num_threads= 16;
-    omp_set_num_threads(num_threads);
-
-    // Carica l'immagine usando stb_image
+    int num_thread=4;
+    omp_set_num_threads(num_thread);
+    // Load the image using stb_image
     int width, height, channels;
-    unsigned char* image = stbi_load("img/input.png", &width, &height, &channels, 3);  // Carica come RGB
-    if (image == nullptr) {
-        std::cerr << "Error loading image!" << std::endl;
-        return -1;
+    unsigned char* original_image = stbi_load("img/input 2.png", &width, &height, &channels, 0); // Carica tutti i canali
+    if (channels == 4) {
+        unsigned char* rgb_image = new unsigned char[width * height * 3];
+        for (int i = 0; i < width * height; ++i) {
+            rgb_image[i * 3 + 0] = original_image[i * 4 + 0]; // R
+            rgb_image[i * 3 + 1] = original_image[i * 4 + 1]; // G
+            rgb_image[i * 3 + 2] = original_image[i * 4 + 2]; // B
+        }
+        stbi_image_free(original_image);
+        original_image = rgb_image;
+        channels = 3;
     }
 
     double bandwidth = 20.0;
 
-    // Esegui la segmentazione dell'immagine con Mean-Shift
+    // Perform the image segmentation with Mean-Shift
     auto start_total = std::chrono::high_resolution_clock::now();
-    mean_shift_image_segmentation(image, width, height, channels, bandwidth,num_threads);
+    mean_shift_image_segmentation(original_image, width, height, channels, bandwidth,num_thread);
     auto end_total = std::chrono::high_resolution_clock::now();
-    std::cout << "Execution time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_total - start_total).count() << " seconds" << std::endl;
+    std::cout << "Execution time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_total - start_total).count() << " milliseconds" << std::endl;
 
-    // Salva l'immagine segmentata usando stb_image_write
-    stbi_write_png("img/output.png", width, height, channels, image, width * channels);
 
-    // Libera la memoria dell'immagine
-    stbi_image_free(image);
+    // Save the segmented image using stb_image_write
+    stbi_write_png("img/output 2.png", width, height, channels, original_image, width * 3);
 
+    stbi_image_free(original_image);
     return 0;
 }
 

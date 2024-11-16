@@ -3,7 +3,6 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 #include <iostream>
-#include <vector>
 #include <map>
 #include <tuple>
 #include <chrono>
@@ -37,47 +36,43 @@ double gaussian_kernel(double distance, double bandwidth) {
     return std::exp(-0.5 * (distance * distance) / (bandwidth * bandwidth));
 }
 
-Point mean_shift_single_point(const Point& point, const std::vector<Point>& points, double bandwidth, int max_iter, double tol) {
-    Point current_point = point;
+void mean_shift_clustering(Point* points, int num_points, double bandwidth, int max_iter, double tol, Point* shifted_points) {
+    // Perform Mean-Shift for each point
+    for (int i = 0; i < num_points; ++i) {
+        Point current_point = points[i];
 
-    for (int i = 0; i < max_iter; i++) {
-        Point numerator(0, 0, 0, 0, 0);
-        double denominator = 0.0;
+        // Perform Mean-Shift for the current point
+        for (int iter = 0; iter < max_iter; ++iter) {
+            Point numerator(0, 0, 0, 0, 0);
+            double denominator = 0.0;
 
-        // Calculate the shift
-        for (const Point& p : points) {
-            double dist = current_point.distance(p);
-            double weight = gaussian_kernel(dist, bandwidth);
-            numerator = numerator + p * weight;
-            denominator += weight;
+            // Calculate the shift for the current point
+            for (int j = 0; j < num_points; ++j) {
+                double dist = current_point.distance(points[j]);
+                double weight = gaussian_kernel(dist, bandwidth);
+                numerator = numerator + points[j] * weight;
+                denominator += weight;
+            }
+            Point new_point = numerator / denominator;
+            double shift_distance = new_point.distance(current_point);
+
+            if (shift_distance < tol)
+                break;
+
+            current_point = new_point;
         }
-        Point new_point = numerator / denominator;
-        double shift_distance = new_point.distance(current_point);
 
-        if (shift_distance < tol)
-            break;
-
-        current_point = new_point;
+        // Store the shifted point
+        shifted_points[i] = current_point;
     }
-    return current_point;
 }
 
-std::vector<Point> mean_shift_clustering(const std::vector<Point>& points, double bandwidth, int max_iter = 300, double tol = 1e-3) {
-    std::vector<Point> shifted_points(points.size());
-    std::cout << "Clustering with Mean-Shift..." << std::endl;
-    std::cout << "Number of points: " << points.size() << std::endl;
-
-    // Perform mean-shift on each point
-    for (int i = 0; i < points.size(); ++i) {
-        shifted_points[i] = mean_shift_single_point(points[i], points, bandwidth, max_iter, tol);
-    }
-
-    return shifted_points;
-}
-
-// Main function to segment the image
 void mean_shift_image_segmentation(unsigned char* image, int width, int height, int channels, double bandwidth) {
-    std::vector<Point> points;
+    int num_points = width * height;
+    Point* points = new Point[num_points];
+
+    std::cout << "Clustering with Mean-Shift..." << std::endl;
+    std::cout << "Number of points: " << num_points << std::endl;
 
     // Load the image pixels as points with color and spatial position
     for (int y = 0; y < height; ++y) {
@@ -85,20 +80,25 @@ void mean_shift_image_segmentation(unsigned char* image, int width, int height, 
             unsigned char r = image[(y * width + x) * channels + 0];
             unsigned char g = image[(y * width + x) * channels + 1];
             unsigned char b = image[(y * width + x) * channels + 2];
-            points.emplace_back(x, y, r, g, b);
+            points[(y * width + x)] = Point(x, y, r, g, b);
         }
     }
 
-    // Apply Mean-Shift Clustering
-    std::vector<Point> shifted_points = mean_shift_clustering(points, bandwidth);
+    // Perform clustering
+    Point* shifted_points = new Point[num_points];
+    int max_iter = 300;
+    double tol = 1e-3;
+
+    // Call the mean shift clustering function
+    mean_shift_clustering(points, num_points, bandwidth, max_iter, tol, shifted_points);
 
     // Map to store clusters with their centroid (x, y, r, g, b) and population count
     std::map<std::tuple<int, int, int, int, int>, int> cluster_map;
 
-    for (const auto& point : shifted_points) {
-        std::tuple<int, int, int, int, int> cluster_center = {static_cast<int>(point.x), static_cast<int>(point.y),
-                                                              static_cast<int>(point.r), static_cast<int>(point.g),
-                                                              static_cast<int>(point.b)};
+    for (int i = 0; i < num_points; ++i) {
+        std::tuple<int, int, int, int, int> cluster_center = {static_cast<int>(shifted_points[i].x), static_cast<int>(shifted_points[i].y),
+                                                              static_cast<int>(shifted_points[i].r), static_cast<int>(shifted_points[i].g),
+                                                              static_cast<int>(shifted_points[i].b)};
         cluster_map[cluster_center]++;
     }
 
@@ -115,41 +115,50 @@ void mean_shift_image_segmentation(unsigned char* image, int width, int height, 
     }
 
     // Rebuild the image using the mean color of the clusters
-    for (int i = 0; i < points.size(); ++i) {
-        int x = static_cast<int>(points[i].x);
-        int y = static_cast<int>(points[i].y);
+    for (int i = 0; i < num_points; ++i) {
+        int x = static_cast<int>(std::round(points[i].x));
+        int y = static_cast<int>(std::round(points[i].y));
+
         image[(y * width + x) * channels + 0] = static_cast<unsigned char>(shifted_points[i].r);  // R
         image[(y * width + x) * channels + 1] = static_cast<unsigned char>(shifted_points[i].g);  // G
         image[(y * width + x) * channels + 2] = static_cast<unsigned char>(shifted_points[i].b);  // B
     }
+
+    delete[] points;
+    delete[] shifted_points;
 }
 
 int main() {
     // Load the image using stb_image
     int width, height, channels;
-    unsigned char* image = stbi_load("img/input.png", &width, &height, &channels, 3);  // Load as RGB
-    if (image == nullptr) {
-        std::cerr << "Error loading image!" << std::endl;
-        return -1;
+    unsigned char* original_image = stbi_load("img/input 2.png", &width, &height, &channels, 0); // Carica tutti i canali
+    if (channels == 4) {
+        unsigned char* rgb_image = new unsigned char[width * height * 3];
+        for (int i = 0; i < width * height; ++i) {
+            rgb_image[i * 3 + 0] = original_image[i * 4 + 0]; // R
+            rgb_image[i * 3 + 1] = original_image[i * 4 + 1]; // G
+            rgb_image[i * 3 + 2] = original_image[i * 4 + 2]; // B
+        }
+        stbi_image_free(original_image);
+        original_image = rgb_image;
+        channels = 3;
     }
 
     double bandwidth = 20.0;
 
     // Perform the image segmentation with Mean-Shift
     auto start_total = std::chrono::high_resolution_clock::now();
-    mean_shift_image_segmentation(image, width, height, channels, bandwidth);
+    mean_shift_image_segmentation(original_image, width, height, channels, bandwidth);
     auto end_total = std::chrono::high_resolution_clock::now();
-    std::cout << "Execution time: " << std::chrono::duration_cast<std::chrono::seconds>(end_total - start_total).count() << " seconds" << std::endl;
-
+    std::cout << "Execution time: " << std::chrono::duration_cast<std::chrono::milliseconds>(end_total - start_total).count() << " milliseconds" << std::endl;
 
     // Save the segmented image using stb_image_write
-    stbi_write_png("img/output.png", width, height, channels, image, width * channels);
+    stbi_write_png("img/output 2.png", width, height, channels, original_image, width * 3);
 
-    // Free the image memory
-    stbi_image_free(image);
-
+    stbi_image_free(original_image);
     return 0;
 }
+
 
 
 
