@@ -101,7 +101,7 @@ void mean_shift_image_segmentation(unsigned char* image, int width, int height, 
     std::cout << "Number of points: " << num_points << std::endl;
 
     // Carica i pixel dell'immagine come punti con posizione spaziale e colore
-#pragma omp parallel for schedule(static)
+#pragma omp parallel for
     for (int y = 0; y < height; ++y) {
         int y_offset = y * width;
         for (int x = 0; x < width; ++x) {
@@ -173,11 +173,11 @@ void mean_shift_image_segmentation(unsigned char* image, int width, int height, 
 }
 
 int main() {
-    int num_thread=4;
+    int num_thread = 4;
     omp_set_num_threads(num_thread);
     // Load the image using stb_image
     int width, height, channels;
-    unsigned char* original_image = stbi_load("img/input 2.png", &width, &height, &channels, 0); // Carica tutti i canali
+    unsigned char* original_image = stbi_load("img/input70.png", &width, &height, &channels, 0); // Carica tutti i canali
     if (channels == 4) {
         unsigned char* rgb_image = new unsigned char[width * height * 3];
         for (int i = 0; i < width * height; ++i) {
@@ -200,7 +200,7 @@ int main() {
 
 
     // Save the segmented image using stb_image_write
-    stbi_write_png("img/output 2.png", width, height, channels, original_image, width * 3);
+    stbi_write_png("img/output70.png", width, height, channels, original_image, width * 3);
 
     stbi_image_free(original_image);
     return 0;
