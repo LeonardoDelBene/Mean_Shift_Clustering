@@ -177,7 +177,7 @@ int main() {
     omp_set_num_threads(num_thread);
     // Load the image using stb_image
     int width, height, channels;
-    unsigned char* original_image = stbi_load("img/input70.png", &width, &height, &channels, 0); // Carica tutti i canali
+    unsigned char* original_image = stbi_load("img/input80.png", &width, &height, &channels, 0); // Carica tutti i canali
     if (channels == 4) {
         unsigned char* rgb_image = new unsigned char[width * height * 3];
         for (int i = 0; i < width * height; ++i) {
@@ -200,7 +200,7 @@ int main() {
 
 
     // Save the segmented image using stb_image_write
-    stbi_write_png("img/output70.png", width, height, channels, original_image, width * 3);
+    stbi_write_png("img/output80.png", width, height, channels, original_image, width * 3);
 
     stbi_image_free(original_image);
     return 0;
