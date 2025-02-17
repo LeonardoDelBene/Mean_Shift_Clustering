@@ -1,4 +1,4 @@
 /Applications/CLion.app/Contents/bin/cmake/mac/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Applications/CLion.app/Contents/bin/ninja/mac/x64/ninja -G Ninja -S /Users/leonardodelbene/CLionProjects/Mean_Shift_Clustering -B /Users/leonardodelbene/CLionProjects/Mean_Shift_Clustering/cmake-build-debug
--- Configuring done (2.7s)
--- Generating done (0.0s)
+-- Configuring done (22.7s)
+-- Generating done (1.7s)
 -- Build files have been written to: /Users/leonardodelbene/CLionProjects/Mean_Shift_Clustering/cmake-build-debug
